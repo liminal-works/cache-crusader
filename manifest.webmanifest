@@ -1,0 +1,14 @@
+{
+    "name": "Cache Crusader",
+    "short_name": "CacheCrusader",
+    "description": "Beat the dungeon, earn the coordinates, sign the log.",
+    "start_url": "./",
+    "display": "fullscreen",
+    "orientation": "portrait",
+    "background_color": "#050510",
+    "theme_color": "#050510",
+    "icons": [
+        { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    ]
+}
