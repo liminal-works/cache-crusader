@@ -4,15 +4,13 @@
 import { CACHE_CONFIG } from "../../config.js";
 import { decodeCoords } from "../coords.js";
 import { buildGrids, ROOMS, TILE, at, roomBoundsPx, MAP_W, MAP_H } from "../map.js";
-import { say, isDialogOpen } from "../dialog.js";
+import { say, sayChoice, isDialogOpen } from "../dialog.js";
 import { createControls } from "../controls.js";
 import { createHUD } from "../hud.js";
 import { sfx } from "../sfx.js";
 
 const SPEED = 90;
 const SUS_RADIUS = 42;
-
-let seenIntro = false;
 
 const WIZARD_HINTS = [
     "Try looking where it is, not where it isn't.",
@@ -43,6 +41,7 @@ export function registerGameScene() {
             frags: [null, null, null, null, null],
             fragCount: 0,
             suspicion: 0,
+            susPausedUntil: 0,
             hasTrackable: false,
             decoyBites: 0,
             deaths: 0,
@@ -350,6 +349,51 @@ export function registerGameScene() {
             });
         }
 
+        // pressure-plate spikes: dormant frame reads as ordinary floor wear
+        // until someone steps on it
+        function addTrapSpike(tx, ty) {
+            const s = add([
+                sprite("spikes", { frame: 0 }),
+                pos(tx * TILE, ty * TILE),
+                z(-50),
+                { armedAt: null, cooldownUntil: 0 },
+            ]);
+            s.onUpdate(() => {
+                const c = s.pos.add(8, 8);
+                const stepped = Math.abs(player.pos.x - c.x) < 9
+                    && Math.abs(player.pos.y + 6 - c.y) < 9;
+                if (s.armedAt === null) {
+                    s.frame = 0;
+                    if (stepped && time() > s.cooldownUntil) {
+                        s.armedAt = time();
+                        sfx.lever();
+                    }
+                } else {
+                    const t = time() - s.armedAt;
+                    if (t < 0.22) {
+                        s.frame = 1;
+                    } else if (t < 0.8) {
+                        s.frame = 3;
+                        if (stepped) damage(1);
+                    } else {
+                        s.armedAt = null;
+                        s.cooldownUntil = time() + 0.8;
+                    }
+                }
+            });
+        }
+
+        function addPillar(tx, ty) {
+            add([
+                sprite("pillar"),
+                pos(tx * TILE + 8, (ty + 1) * TILE),
+                anchor("bot"),
+                area({ shape: new Rect(vec2(-6, -12), 12, 12) }),
+                body({ isStatic: true }),
+                z((ty + 1) * TILE),
+            ]);
+        }
+
         function addFountain(tx, ty) {
             add([
                 sprite("lava_fountain", { anim: "flow" }),
@@ -365,6 +409,20 @@ export function registerGameScene() {
         }
 
         // ---------- muggles ----------
+        const MUGGLE_PROMPTS = [
+            "You've been pacing around that spot for ten minutes. Everything okay?",
+            "Whatcha doing down there? Drop something?",
+            "Are you... talking to that ammo can?",
+            "You look lost. And suspicious. Mostly suspicious.",
+        ];
+        const MUGGLE_EXCUSES = [
+            { line: "Just looking for my keys!", reply: "Ah, classic. Happens to everyone. Good luck!" },
+            { line: "I'm a surveyor. Official.", reply: "Ooh, official-looking! Carry on then." },
+            { line: "BIRDWATCHING.", reply: "...In a dungeon? ...Neat. Well, enjoy." },
+            { line: "Nothing. Nothing at all.", reply: "That's exactly what someone doing something would say. But okay." },
+            { line: "Have you tried geocaching?", reply: "Geo-what? Sounds made up. Anyway, have a nice day." },
+        ];
+
         const muggles = [];
         function addMuggle(kind, room, tx, ty, speed = 26) {
             const big = kind === "ogre";
@@ -416,6 +474,31 @@ export function registerGameScene() {
                 }
                 mark.opacity = player.pos.dist(m.pos) < SUS_RADIUS ? 1 : 0;
             });
+
+            // small talk: a good excuse pauses the suspicion climb for a while
+            m.excusedUntil = 0;
+            makeInteract(m, async () => {
+                m.flipX = player.pos.x < m.pos.x;
+                if (time() < m.excusedUntil) {
+                    say({ who: "MUGGLE", text: "It nods politely. Best not push your luck." });
+                    return;
+                }
+                const excuses = [...MUGGLE_EXCUSES]
+                    .sort(() => rand(0, 1) - 0.5)
+                    .slice(0, 3);
+                const pick = await sayChoice(
+                    "MUGGLE",
+                    choose(MUGGLE_PROMPTS),
+                    excuses.map((e) => e.line),
+                );
+                say({ who: "MUGGLE", text: excuses[pick].reply }).then(() => {
+                    m.excusedUntil = time() + 30;
+                    state.susPausedUntil = time() + 12;
+                    state.suspicion = Math.max(0, state.suspicion - 0.3);
+                    floatText(player.pos.add(0, -20), "phew...", rgb(140, 255, 140));
+                });
+            }, { radius: 22 });
+
             muggles.push(m);
         }
 
@@ -424,7 +507,7 @@ export function registerGameScene() {
         }
 
         function bumpSuspicionForInteract() {
-            if (muggleNearby()) {
+            if (muggleNearby() && time() > state.susPausedUntil) {
                 state.suspicion = Math.min(1, state.suspicion + 0.34);
                 floatText(player.pos.add(0, -20), "so sus...", rgb(255, 160, 80));
             }
@@ -433,7 +516,10 @@ export function registerGameScene() {
         onUpdate(() => {
             if (isDialogOpen()) return;
             if (muggleNearby()) {
-                state.suspicion = Math.min(1, state.suspicion + dt() * 0.15);
+                // a good excuse buys a window where curiosity stops climbing
+                if (time() > state.susPausedUntil) {
+                    state.suspicion = Math.min(1, state.suspicion + dt() * 0.15);
+                }
             } else {
                 state.suspicion = Math.max(0, state.suspicion - dt() * 0.12);
             }
@@ -507,17 +593,18 @@ export function registerGameScene() {
             }, { radius: 24 });
         }
 
-        // ---------- cache-asaur ----------
+        // ---------- dnf-asaur (a fellow dino, less successful) ----------
         const SAUR_LINES = [
             "Lifeline?",
             "Lifeline?? ...The wizard. He sells potions. THAT'S the lifeline.",
             "I've DNF'd this dungeon four times. It's rated 1.5/1.5. Allegedly.",
             "You found the tin and thought it was over? Classic.",
             "If a green can has teeth, that's not a can. Learned that the hard way.",
+            "You must be the famous Cache-asaur. I'm the other one.",
         ];
-        function addCachesaur(tx, ty) {
+        function addDnfasaur(tx, ty) {
             const c = add([
-                sprite("cachesaur", { anim: "idle" }),
+                sprite("dnfasaur", { anim: "idle" }),
                 pos(at(tx, ty)),
                 anchor("center"),
                 area({ shape: new Rect(vec2(0, 6), 12, 12) }),
@@ -525,7 +612,7 @@ export function registerGameScene() {
                 z(5),
             ]);
             c.add([
-                text("cache-asaur", { size: 8, font: "unscii" }),
+                text("dnf-asaur", { size: 8, font: "unscii" }),
                 anchor("center"),
                 pos(0, -22),
                 color(120, 255, 180),
@@ -534,7 +621,7 @@ export function registerGameScene() {
             let i = 0;
             makeInteract(c, () => {
                 c.flipX = player.pos.x < c.pos.x;
-                say({ who: "CACHE-ASAUR", text: SAUR_LINES[i % SAUR_LINES.length] });
+                say({ who: "DNF-ASAUR", text: SAUR_LINES[i % SAUR_LINES.length] });
                 i++;
             }, { radius: 24 });
         }
@@ -600,9 +687,14 @@ export function registerGameScene() {
                 ui++;
             }, { radius: 18, enabled: () => imp.rescued });
 
-            // follow the player's breadcrumb trail, contributing nothing
+            // follow the player's breadcrumb trail, contributing nothing —
+            // but keep a respectful distance so it never blocks an interact
             imp.onUpdate(() => {
                 if (!imp.rescued || isDialogOpen()) return;
+                if (imp.pos.dist(player.pos) < 26) {
+                    if (imp.curAnim() !== "idle") imp.play("idle");
+                    return;
+                }
                 const target = trail.length > 26 ? trail[trail.length - 26] : null;
                 if (target && imp.pos.dist(target) > 3) {
                     const d = target.sub(imp.pos);
@@ -675,7 +767,7 @@ export function registerGameScene() {
 
         // shop
         addWizard(6, 9);
-        addCachesaur(9, 12);
+        addDnfasaur(9, 12);
         addCoinChest(15, 9, 5);
         addTrackableCell();
         addBanner("banner_blue", 5, 7);
@@ -693,13 +785,32 @@ export function registerGameScene() {
         addCoin(21, 15);
         addCoin(31, 15);
 
-        // vault
+        // vault: pillars flank the approach to the final door for grandeur
         addDecoyCan(38, 12);
         addFragmentCan(4, 40, 12);
         addDecoyCan(42, 12);
         addMuggle("muggle_m", R.vault, 40, 14);
         addBanner("banner_red", 37, 7);
         addBanner("banner_red", 41, 7);
+        addPillar(36, 8);
+        addPillar(41, 8);
+        addPillar(36, 11);
+        addPillar(41, 11);
+        addPillar(37, 2);
+        addPillar(41, 2);
+
+        // hidden pressure-plate spikes, scattered thinly across the dungeon
+        addTrapSpike(10, 35);
+        addTrapSpike(26, 31);
+        addTrapSpike(29, 35);
+        addTrapSpike(38, 34);
+        addTrapSpike(42, 31);
+        addTrapSpike(9, 22);
+        addTrapSpike(10, 25);
+        addTrapSpike(39, 20);
+        addTrapSpike(40, 24);
+        addTrapSpike(36, 13);
+        addTrapSpike(43, 10);
 
         // final door + the true cache
         addDoor(38, 8, {
@@ -782,19 +893,13 @@ export function registerGameScene() {
             };
         }
 
-        // ---------- intro ----------
-        if (!seenIntro) {
-            seenIntro = true;
-            wait(0.4, () => {
-                say([
-                    { who: "CHERUB", text: "Congratulations, adventurer! You have found the ancient relic!" },
-                    { who: "CHERUB", text: "...What? You thought this was JUST ANOTHER TIN?" },
-                    { who: "CHERUB", text: "Oh, sweet summer cacher. The log you seek lies deeper." },
-                    { who: "CHERUB", text: "FIVE coordinate fragments are hidden in these halls, guarded by decoys and... worse. MUGGLES." },
-                    { who: "CHERUB", text: "Open the green cans. Mind the teeth. Act natural around muggles." },
-                    { who: "CHERUB", text: "Off you go, CACHE CRUSADER! I'll wait here. I don't do dungeons." },
-                ]);
+        // one greeting from the cherub on arrival (the full intro cutscene
+        // already played before this scene)
+        wait(0.4, () => {
+            say({
+                who: "CHERUB",
+                text: "This is as far as I go. I don't do dungeons. Good luck, Cache-asaur!",
             });
-        }
+        });
     });
 }

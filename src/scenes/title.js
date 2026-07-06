@@ -1,5 +1,3 @@
-import { CACHE_CONFIG } from "../../config.js";
-
 export function registerTitleScene() {
     scene("title", () => {
         add([
@@ -39,7 +37,7 @@ export function registerTitleScene() {
         ]);
 
         add([
-            text(`a "${CACHE_CONFIG.cacheName}" production`, { size: 8, font: "unscii" }),
+            text("a geocaching game", { size: 8, font: "unscii" }),
             color(220, 220, 220),
             anchor("center"),
             pos(width() / 2, height() / 3 + 34),
@@ -47,19 +45,29 @@ export function registerTitleScene() {
             z(3),
         ]);
 
-        const prompt = add([
+        const promptShadow = add([
             text("press to start", { size: 12, font: "unscii" }),
-            color(255, 255, 255),
+            color(0, 0, 0),
             anchor("center"),
-            pos(width() / 2, height() * 0.72),
+            pos(width() / 2 + 2, height() * 0.72 + 2),
             fixed(),
             z(3),
         ]);
+        const prompt = add([
+            text("press to start", { size: 12, font: "unscii" }),
+            color(255, 216, 0),
+            anchor("center"),
+            pos(width() / 2, height() * 0.72),
+            fixed(),
+            z(4),
+        ]);
         onUpdate(() => {
-            prompt.opacity = 0.55 + 0.45 * Math.sin(time() * 4);
+            const o = 0.55 + 0.45 * Math.sin(time() * 4);
+            prompt.opacity = o;
+            promptShadow.opacity = o;
         });
 
-        const start = () => go("game");
+        const start = () => go("intro");
         onMousePress(start);
         onKeyPress(start);
         onTouchStart(start);

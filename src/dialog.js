@@ -5,10 +5,17 @@
 import { sfx } from "./sfx.js";
 
 let open = false;
+let closedAt = -10;
 let chain = Promise.resolve();
 
 export function isDialogOpen() {
     return open;
+}
+
+// the tap/keypress that dismisses a dialog also reaches the interact
+// handlers in the same frame — give callers a short grace window to ignore it
+export function dialogJustClosed() {
+    return time() - closedAt < 0.3;
 }
 
 // lines: array of { who, text } (or a single one)
@@ -118,9 +125,110 @@ function runDialog(lines) {
             typer.cancel();
             [box, nameTxt, bodyTxt, cue].forEach((o) => destroy(o));
             open = false;
+            closedAt = time();
             resolve();
         }
 
         startLine();
+    });
+}
+
+// Prompt with up to 3 tappable options. Resolves with the chosen index.
+// Keyboard: up/down + enter/space/e. Touch/mouse: tap an option row.
+export function sayChoice(who, prompt, options) {
+    chain = chain.then(() => runChoice(who, prompt, options));
+    return chain;
+}
+
+function runChoice(who, prompt, options) {
+    return new Promise((resolve) => {
+        open = true;
+
+        const W = width();
+        const H = height();
+        const boxH = 46 + options.length * 13;
+        const top = H - boxH - 4;
+        const objs = [];
+        const openedAt = time();
+
+        objs.push(add([
+            rect(W - 8, boxH),
+            pos(4, top),
+            color(8, 8, 28),
+            outline(2, rgb(230, 230, 240)),
+            fixed(),
+            z(5000),
+        ]));
+        objs.push(add([
+            text(who, { size: 8, font: "unscii" }),
+            pos(10, top + 6),
+            color(255, 216, 74),
+            fixed(),
+            z(5001),
+        ]));
+        objs.push(add([
+            text(prompt, { size: 8, font: "unscii", width: W - 24, lineSpacing: 2 }),
+            pos(10, top + 18),
+            color(235, 235, 235),
+            fixed(),
+            z(5001),
+        ]));
+
+        let sel = 0;
+        const rows = options.map((opt, i) => {
+            const y = top + 42 + i * 13;
+            const t = add([
+                text("  " + opt, { size: 8, font: "unscii" }),
+                pos(16, y),
+                color(160, 160, 170),
+                fixed(),
+                z(5001),
+                { rowY: y },
+            ]);
+            objs.push(t);
+            return t;
+        });
+
+        function paint() {
+            rows.forEach((r, i) => {
+                r.text = (i === sel ? "> " : "  ") + options[i];
+                r.color = i === sel ? rgb(255, 216, 74) : rgb(160, 160, 170);
+            });
+        }
+        paint();
+
+        function move(d) {
+            sel = (sel + d + options.length) % options.length;
+            sfx.blip();
+            paint();
+        }
+
+        function choose(i) {
+            handlers.forEach((h) => h.cancel());
+            objs.forEach((o) => destroy(o));
+            open = false;
+            closedAt = time();
+            resolve(i);
+        }
+
+        const handlers = [
+            onKeyPress("up", () => move(-1)),
+            onKeyPress("w", () => move(-1)),
+            onKeyPress("down", () => move(1)),
+            onKeyPress("s", () => move(1)),
+            onKeyPress("enter", () => choose(sel)),
+            onKeyPress("space", () => choose(sel)),
+            onKeyPress("e", () => choose(sel)),
+            onMousePress(() => {
+                if (time() - openedAt < 0.25) return;
+                const p = mousePos();
+                const i = rows.findIndex((r) => p.y >= r.rowY - 3 && p.y < r.rowY + 11);
+                if (i >= 0) {
+                    sel = i;
+                    paint();
+                    choose(i);
+                }
+            }),
+        ];
     });
 }

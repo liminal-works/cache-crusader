@@ -20,6 +20,13 @@ export function createHUD(state) {
         fixed(),
         z(3000),
     ]);
+    add([
+        text("geocoins", { size: 8, font: "unscii" }),
+        pos(5, 34),
+        color(150, 150, 165),
+        fixed(),
+        z(3000),
+    ]);
 
     add([sprite("can", { frame: 0 }), pos(width() - 52, 2), fixed(), z(3000)]);
     const fragTxt = add([
@@ -40,7 +47,15 @@ export function createHUD(state) {
     const susBar = add([
         rect(62, 6), pos(width() / 2 - 23, 7), color(120, 220, 90), fixed(), z(3001), opacity(0),
     ]);
-    susGroup.push(susIcon, susBack, susBar);
+    const susLabel = add([
+        text("suspicion", { size: 8, font: "unscii" }),
+        pos(width() / 2 - 24, 17),
+        color(150, 150, 165),
+        fixed(),
+        z(3000),
+        opacity(0),
+    ]);
+    susGroup.push(susIcon, susBack, susBar, susLabel);
 
     return {
         update() {

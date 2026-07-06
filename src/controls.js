@@ -3,7 +3,7 @@
 // walking diagonally-ish while tapping interact actually works — the
 // prototype's hover-based buttons couldn't do that.
 
-import { isDialogOpen } from "./dialog.js";
+import { isDialogOpen, dialogJustClosed } from "./dialog.js";
 
 const ARROW_FRAMES = { up: 0, down: 1, right: 2, left: 3 };
 
@@ -113,7 +113,9 @@ export function createControls() {
     }
 
     function fireInteract() {
-        if (isDialogOpen()) return;
+        // dialogJustClosed: the same tap that dismissed a dialog box must
+        // not immediately re-interact with whatever is in front of us
+        if (isDialogOpen() || dialogJustClosed()) return;
         interactFns.forEach((fn) => fn());
     }
 

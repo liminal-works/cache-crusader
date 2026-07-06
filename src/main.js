@@ -2,6 +2,7 @@ import kaboom from "../vendor/kaboom.mjs";
 import { loadAssets } from "./sprites.js";
 import { unlockAudio } from "./sfx.js";
 import { registerTitleScene } from "./scenes/title.js";
+import { registerIntroScene } from "./scenes/intro.js";
 import { registerGameScene } from "./scenes/game.js";
 import { registerWinScene } from "./scenes/win.js";
 
@@ -31,6 +32,7 @@ window.addEventListener("touchend", (e) => {
 
 loadAssets();
 registerTitleScene();
+registerIntroScene();
 registerGameScene();
 registerWinScene();
 

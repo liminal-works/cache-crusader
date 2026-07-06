@@ -84,23 +84,50 @@ export function registerWinScene() {
                 z(2),
             ]);
 
-            const again = add([
-                text("TFTC! (tap to replay)", { size: 8, font: "unscii" }),
+            // deliberately NO tap-to-replay: nobody should lose their
+            // hard-earned coordinates to a stray tap
+            const copyBtn = add([
+                text("TFTC! (tap to copy coords)", { size: 8, font: "unscii" }),
                 anchor("center"),
-                pos(width() / 2, 236),
+                pos(width() / 2, 228),
                 color(255, 216, 74),
                 fixed(),
                 z(2),
             ]);
+            add([
+                text("(refresh the page to replay)", { size: 8, font: "unscii" }),
+                anchor("center"),
+                pos(width() / 2, 244),
+                color(110, 110, 130),
+                fixed(),
+                z(2),
+            ]);
             onUpdate(() => {
-                again.opacity = 0.55 + 0.45 * Math.sin(time() * 4);
+                copyBtn.opacity = 0.6 + 0.4 * Math.sin(time() * 4);
             });
 
+            let copyBusy = false;
+            async function copyCoords() {
+                if (copyBusy) return;
+                copyBusy = true;
+                const coords = frags.join(" ");
+                try {
+                    await navigator.clipboard.writeText(coords);
+                    copyBtn.text = "copied! go get that log!";
+                    sfx.coin();
+                } catch {
+                    copyBtn.text = "couldn't copy -- screenshot it!";
+                }
+                wait(2.2, () => {
+                    copyBtn.text = "TFTC! (tap to copy coords)";
+                    copyBusy = false;
+                });
+            }
+
             wait(0.8, () => {
-                const restart = () => go("title");
-                onMousePress(restart);
-                onKeyPress(restart);
-                onTouchStart(restart);
+                onMousePress(copyCoords);
+                onKeyPress(copyCoords);
+                onTouchStart(copyCoords);
             });
         });
     });

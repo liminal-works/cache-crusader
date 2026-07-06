@@ -28,12 +28,13 @@ function smallChar(x, y) {
 export function loadAssets() {
     loadBitmapFont("unscii", "assets/unscii_8x8.png", 8, 8);
     loadSprite("title", "assets/title.png");
+    loadSprite("tin", "assets/tin.png");
 
     loadSpriteAtlas("assets/dungeon.png", {
         // ---- characters ----
-        hero: tallChar(128, 100),        // knight, our crusader
+        hero: tallChar(128, 196),        // teal lizard: Cache-asaur, our crusader
         wizard: tallChar(128, 164),      // white-bearded potion merchant
-        cachesaur: tallChar(128, 196),   // teal lizard, the Cache-asaur
+        dnfasaur: tallChar(128, 228),    // green lizard NPC, DNF'd four times
         muggle_f: tallChar(128, 4),      // regular folks, dangerously observant
         muggle_m: tallChar(128, 36),
         ogre: {
@@ -86,6 +87,7 @@ export function loadAssets() {
             x: 32, y: 208, width: 64, height: 48, sliceX: 2,
             anims: { open: { from: 0, to: 1, loop: false }, close: { from: 1, to: 0, loop: false } },
         },
+        pillar: { x: 80, y: 80, width: 16, height: 40 },
         banner_red: { x: 16, y: 32, width: 16, height: 16 },
         banner_blue: { x: 32, y: 32, width: 16, height: 16 },
         banner_green: { x: 16, y: 48, width: 16, height: 16 },

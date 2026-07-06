@@ -20,8 +20,11 @@ paper log is waiting.
   and you're COMPROMISED (that costs a heart).
 - **A wizard** — sells healing potions for 5 geocoins and dispenses hints
   that are technically hints.
-- **Cache-asaur** — a friendly dino who offers a lifeline. The lifeline is
-  pointing at the wizard.
+- **You play as Cache-asaur** — a small teal dinosaur with a big mission.
+- **DNF-asaur** — a fellow dino who has failed this dungeon four times and
+  offers a lifeline. The lifeline is pointing at the wizard.
+- **Talking your way out** — chat with a muggle and pick one of three
+  excuses ("BIRDWATCHING.") to pause the suspicion meter for a while.
 - **A trackable** (TB-U5LE55) — rescue it from its cell with the lever.
   It follows you for the rest of the game. It is completely useless.
   Its goal is to visit Ohio.
