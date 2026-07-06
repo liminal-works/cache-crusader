@@ -51,29 +51,38 @@ export function registerGameScene() {
         };
 
         // ---------- world ----------
-        const { floorRows, wallRows } = buildGrids();
+        const { floorRows, wallRows, overlays } = buildGrids();
 
-        addLevel(floorRows, {
+        // explicit z on the level parents: root objects sort against the
+        // LEVEL object's z, not the tiles' z, so anything meant to sit on
+        // the floor must land between these two layers
+        const floorLevel = addLevel(floorRows, {
             tileWidth: TILE,
             tileHeight: TILE,
-            tiles: { ".": () => [sprite("floor", { frame: ~~rand(0, 8) }), z(-100)] },
+            tiles: { ".": () => [sprite("floor", { frame: ~~rand(0, 8) })] },
         });
+        floorLevel.use(z(-100));
 
         const solid = () => [body({ isStatic: true }), tile({ isObstacle: true })];
-        addLevel(wallRows, {
+        const wallLevel = addLevel(wallRows, {
             tileWidth: TILE,
             tileHeight: TILE,
             tiles: {
-                "w": (p) => [sprite("wall"), area(), ...solid(), z(p ? p.y * TILE : 0)],
-                "t": () => [sprite("wall_top"), area({ shape: new Rect(vec2(0, 12), 16, 4) }), ...solid(), z(1)],
-                "l": () => [sprite("wall_left"), area({ shape: new Rect(vec2(0, 0), 6, 16) }), ...solid(), z(1)],
-                "r": () => [sprite("wall_right"), area({ shape: new Rect(vec2(10, 0), 6, 16) }), ...solid(), z(1)],
-                "c": () => [sprite("wall_topleft"), area(), ...solid(), z(1)],
-                "d": () => [sprite("wall_topright"), area(), ...solid(), z(1)],
-                "a": () => [sprite("wall_botleft"), area(), ...solid(), z(1)],
-                "b": () => [sprite("wall_botright"), area(), ...solid(), z(1)],
+                "#": () => [sprite("wall"), area(), ...solid()],
+                "%": () => [sprite("wall")],
             },
         });
+        wallLevel.use(z(-90));
+
+        // trim slivers along every brick boundary (mostly-transparent
+        // ledge/edge sprites; the thin collision keeps feet off the trim)
+        for (const o of overlays) {
+            const comps = [sprite(o.name), pos(o.x * TILE, o.y * TILE), z(-85)];
+            if (o.name === "wall_top") {
+                comps.push(area({ shape: new Rect(vec2(0, 12), 16, 4) }), body({ isStatic: true }));
+            }
+            add(comps);
+        }
 
         // ---------- player ----------
         const spawnPoint = at(5, 33);
@@ -335,7 +344,7 @@ export function registerGameScene() {
             const s = add([
                 sprite("spikes", { frame: 0 }),
                 pos(tx * TILE, ty * TILE),
-                z(-50),
+                z(-95),
             ]);
             s.onUpdate(() => {
                 const t = (time() + phase) % 2.1;
@@ -355,7 +364,7 @@ export function registerGameScene() {
             const s = add([
                 sprite("spikes", { frame: 0 }),
                 pos(tx * TILE, ty * TILE),
-                z(-50),
+                z(-95),
                 { armedAt: null, cooldownUntil: 0 },
             ]);
             s.onUpdate(() => {
@@ -888,6 +897,8 @@ export function registerGameScene() {
             window.__DEBUG = {
                 state,
                 player,
+                wallLevel,
+                floorLevel,
                 freecam: false,
                 teleport: (tx, ty) => { player.pos = at(tx, ty); },
             };

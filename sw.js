@@ -1,6 +1,6 @@
 // Offline-first cache: geocache sites rarely have good signal, so once the
 // QR code has loaded the game a single time, it keeps working with no bars.
-const VERSION = "cache-crusader-v3";
+const VERSION = "cache-crusader-v4";
 const ASSETS = [
     "./",
     "./index.html",

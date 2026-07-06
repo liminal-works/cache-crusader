@@ -25,6 +25,21 @@ export function say(lines) {
     return chain;
 }
 
+const LINE_SPACING = 4;
+
+// render the string off-screen once to learn how tall it wraps to
+function measureTextH(str, wrapW) {
+    const probe = add([
+        text(str, { size: 8, font: "unscii", width: wrapW, lineSpacing: LINE_SPACING }),
+        pos(-1000, -1000),
+        fixed(),
+        opacity(0),
+    ]);
+    const h = probe.height;
+    destroy(probe);
+    return h;
+}
+
 function runDialog(lines) {
     return new Promise((resolve) => {
         open = true;
@@ -47,7 +62,7 @@ function runDialog(lines) {
             z(5001),
         ]);
         const bodyTxt = add([
-            text("", { size: 8, font: "unscii", width: W - 24, lineSpacing: 3 }),
+            text("", { size: 8, font: "unscii", width: W - 24, lineSpacing: LINE_SPACING }),
             pos(10, H - 50),
             color(235, 235, 235),
             fixed(),
@@ -76,6 +91,14 @@ function runDialog(lines) {
             done = false;
             bodyTxt.text = "";
             cue.opacity = 0;
+
+            // size the box to fit this line so nothing ever clips
+            const bodyH = Math.max(24, measureTextH(full, W - 24));
+            const boxH = 18 + bodyH + 16;
+            box.height = boxH;
+            box.pos.y = H - 4 - boxH;
+            nameTxt.pos.y = box.pos.y + 6;
+            bodyTxt.pos.y = box.pos.y + 18;
         }
 
         const typer = onUpdate(() => {
@@ -146,10 +169,14 @@ function runChoice(who, prompt, options) {
 
         const W = width();
         const H = height();
-        const boxH = 46 + options.length * 13;
-        const top = H - boxH - 4;
         const objs = [];
         const openedAt = time();
+
+        // measure the prompt first so the option rows never overlap it
+        const promptH = measureTextH(prompt, W - 24);
+        const rowH = 13;
+        const boxH = 18 + promptH + 9 + options.length * rowH + 8;
+        const top = H - boxH - 4;
 
         objs.push(add([
             rect(W - 8, boxH),
@@ -167,7 +194,7 @@ function runChoice(who, prompt, options) {
             z(5001),
         ]));
         objs.push(add([
-            text(prompt, { size: 8, font: "unscii", width: W - 24, lineSpacing: 2 }),
+            text(prompt, { size: 8, font: "unscii", width: W - 24, lineSpacing: LINE_SPACING }),
             pos(10, top + 18),
             color(235, 235, 235),
             fixed(),
@@ -175,8 +202,9 @@ function runChoice(who, prompt, options) {
         ]));
 
         let sel = 0;
+        const optTop = top + 18 + promptH + 9;
         const rows = options.map((opt, i) => {
-            const y = top + 42 + i * 13;
+            const y = optTop + i * rowH;
             const t = add([
                 text("  " + opt, { size: 8, font: "unscii" }),
                 pos(16, y),
