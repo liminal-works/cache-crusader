@@ -116,7 +116,7 @@ export function registerWinScene() {
                     copyBtn.text = "copied! go get that log!";
                     sfx.coin();
                 } catch {
-                    copyBtn.text = "couldn't copy -- screenshot it!";
+                    copyBtn.text = "couldn't copy, screenshot it!";
                 }
                 wait(2.2, () => {
                     copyBtn.text = "TFTC! (tap to copy coords)";
@@ -124,6 +124,9 @@ export function registerWinScene() {
                 });
             }
 
+            // a single tap emits both a mouse and a touch event, but the
+            // copyBusy latch inside copyCoords coalesces the pair into one
+            // copy; repeat taps after the cooldown re-copy, which we want
             wait(0.8, () => {
                 onMousePress(copyCoords);
                 onKeyPress(copyCoords);

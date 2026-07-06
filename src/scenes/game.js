@@ -150,7 +150,7 @@ export function registerGameScene() {
             player.pos = spawnPoint.clone();
             say({
                 who: "CHERUB",
-                text: "Ouch. Back to the entrance with you. Your fragments are safe -- the muggles only take hearts.",
+                text: "Ouch. Back to the entrance with you. Your fragments are safe. Muggles only take hearts.",
             });
         }
 
@@ -417,10 +417,10 @@ export function registerGameScene() {
         ];
         const MUGGLE_EXCUSES = [
             { line: "Just looking for my keys!", reply: "Ah, classic. Happens to everyone. Good luck!" },
-            { line: "I'm a surveyor. Official.", reply: "Ooh, official-looking! Carry on then." },
+            { line: "I'm a surveyor. Official.", reply: "Ooh, very official! Carry on then." },
             { line: "BIRDWATCHING.", reply: "...In a dungeon? ...Neat. Well, enjoy." },
             { line: "Nothing. Nothing at all.", reply: "That's exactly what someone doing something would say. But okay." },
-            { line: "Have you tried geocaching?", reply: "Geo-what? Sounds made up. Anyway, have a nice day." },
+            { line: "Have you tried geocaching?", reply: "Geo what? Sounds made up. Anyway, have a nice day." },
         ];
 
         const muggles = [];
@@ -530,7 +530,7 @@ export function registerGameScene() {
                 if (!state.metMuggle) {
                     state.metMuggle = true;
                     say([
-                        { who: "MUGGLE", text: "Whatcha lookin' for? A geo-what? Is it treasure? Can I help? What's in the can?" },
+                        { who: "MUGGLE", text: "Whatcha lookin' for? A geo what? Is it treasure? Can I help? What's in the can?" },
                         { who: "CHERUB", text: "You were COMPROMISED! Muggles cost you a heart. Keep your distance and don't open containers in front of them." },
                     ]);
                 } else {
@@ -600,7 +600,7 @@ export function registerGameScene() {
             "I've DNF'd this dungeon four times. It's rated 1.5/1.5. Allegedly.",
             "You found the tin and thought it was over? Classic.",
             "If a green can has teeth, that's not a can. Learned that the hard way.",
-            "You must be the famous Cache-asaur. I'm the other one.",
+            "You must be the famous Cacheasaur. I'm the other one.",
         ];
         function addDnfasaur(tx, ty) {
             const c = add([
@@ -612,7 +612,7 @@ export function registerGameScene() {
                 z(5),
             ]);
             c.add([
-                text("dnf-asaur", { size: 8, font: "unscii" }),
+                text("dnfasaur", { size: 8, font: "unscii" }),
                 anchor("center"),
                 pos(0, -22),
                 color(120, 255, 180),
@@ -621,7 +621,7 @@ export function registerGameScene() {
             let i = 0;
             makeInteract(c, () => {
                 c.flipX = player.pos.x < c.pos.x;
-                say({ who: "DNF-ASAUR", text: SAUR_LINES[i % SAUR_LINES.length] });
+                say({ who: "DNFASAUR", text: SAUR_LINES[i % SAUR_LINES.length] });
                 i++;
             }, { radius: 24 });
         }
@@ -637,7 +637,7 @@ export function registerGameScene() {
                 { rescued: false },
             ]);
             const tag = imp.add([
-                text("TB-U5LE55", { size: 8, font: "unscii" }),
+                text("TBU5LE55", { size: 8, font: "unscii" }),
                 anchor("center"),
                 pos(0, -14),
                 color(255, 190, 120),
@@ -667,7 +667,7 @@ export function registerGameScene() {
                 tween(imp.pos, at(13, 9), 0.9, (p) => imp.pos = p).then(() => {
                     imp.play("idle");
                     say([
-                        { who: "???", text: "You rescued a TRACKABLE! (code: TB-U5LE55)" },
+                        { who: "???", text: "You rescued a TRACKABLE! (code: TBU5LE55)" },
                         { who: "TRACKABLE", text: "It vows to accompany you on your noble quest!" },
                         { who: "TRACKABLE", text: "...It is completely useless." },
                         { who: "CHERUB", text: "Its goal is to visit Ohio. It has been in this dungeon for six years." },
@@ -898,7 +898,7 @@ export function registerGameScene() {
         wait(0.4, () => {
             say({
                 who: "CHERUB",
-                text: "This is as far as I go. I don't do dungeons. Good luck, Cache-asaur!",
+                text: "This is as far as I go. I don't do dungeons. Good luck, Cacheasaur!",
             });
         });
     });

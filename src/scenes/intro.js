@@ -70,10 +70,10 @@ export function registerIntroScene() {
             { who: "CHERUB", text: "Congratulations, adventurer! You've found the ANCIENT RELIC!" },
             { who: "CHERUB", text: "...What? You thought this was JUST ANOTHER TIN?" },
             { who: "CHERUB", text: "Oh no no no. It's not over yet." },
-            { who: "CHERUB", text: "The TRUE cache -- and its log -- waits at the end of this dungeon." },
+            { who: "CHERUB", text: "The TRUE cache, and its log, waits at the end of this dungeon." },
             { who: "CHERUB", text: "FIVE coordinate fragments lie hidden in its halls. Decoys with teeth. Muggles with questions." },
             { who: "CHERUB", text: "Find the fragments. Open the final door. Sign the log." },
-            { who: "CHERUB", text: "Go forth, brave CACHE-ASAUR!" },
+            { who: "CHERUB", text: "Go forth, brave CACHEASAUR!" },
         ]);
 
         go("game");

@@ -1,3 +1,5 @@
+import { onceOnPress } from "../press.js";
+
 export function registerTitleScene() {
     scene("title", () => {
         add([
@@ -67,9 +69,6 @@ export function registerTitleScene() {
             promptShadow.opacity = o;
         });
 
-        const start = () => go("intro");
-        onMousePress(start);
-        onKeyPress(start);
-        onTouchStart(start);
+        onceOnPress(() => go("intro"));
     });
 }
